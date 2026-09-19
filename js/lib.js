@@ -2098,15 +2098,14 @@ if (typeof(lib)=="undefined" && typeof(__)=="undefined") {
 			return callback(event);
 		},
 		addWheelListener:function(element, fn, useCapture, ts) {
-			var elements=[element], i=0;
 			var eventType = "onwheel" in __.d.createElement("div") ? "wheel" : // Modern browsers support "wheel"
 					"onmousewheel" in __.d ? "mousewheel" : // Webkit and IE support at least "mousewheel"
 					"MozMousePixelScroll"; // let's assume that remaining browsers are older Firefox
-			if (!(elements[i].guid in __.registeredListeners)) {
-				__.registeredListeners[elements[i].guid]={};
+			if (!(element.guid in __.registeredListeners)) {
+				__.registeredListeners[element.guid]={};
 			}
 			if (!(eventType in __.registeredListeners[elements[i].guid])) {
-				__.registeredListeners[elements[i].guid][eventType]={};
+				__.registeredListeners[element.guid][eventType]={};
 			}
 			__.registeredListeners[element.guid][eventType]["add_"+ts]={ F:function(e) { e.libTarget=element; __.wheel(e, fn); }, oF:fn };
 			if (element.addEventListener) {
