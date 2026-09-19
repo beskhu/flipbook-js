@@ -1,0 +1,3 @@
+RewriteEngine On
+RewriteBase /flipbook/
+RewriteRule ^([0-9]+)$ ?$1 [NC,NE]
