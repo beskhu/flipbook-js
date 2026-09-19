@@ -34,6 +34,10 @@ var flipbook={
 			lib("window").on("wheel", flipbook.scrollWheel);
 			lib("window").on("mouseup", flipbook.stopScrollVertically);
 			lib("window").on("mouseup", flipbook.stopScrollHorizontally);
+
+				lib("window").on("blur", flipbook.stopScrollVertically);
+
+				lib("window").on("blur", flipbook.stopScrollHorizontally);
 			lib("window").on("keydown", flipbook.onKeyDown);
 			lib("window").on("keyup", flipbook.onKeyUp);
 			lib("window").on("popstate", function(event) {
@@ -1677,6 +1681,10 @@ var flipbook={
 		flipbook.lockScrollTarget=false;
 	},
 	scrollHorizontally:function(event) {
+			if ("buttons" in event && event.buttons===0) {
+				flipbook.stopScrollHorizontally();
+				return;
+			}
 		event.preventDefault();
 		if (flipbook.scrollTarget!=="") {
 			var scrollTarget=lib("#"+flipbook.scrollTarget).targets[0],
@@ -1700,6 +1708,10 @@ var flipbook={
 		}
 	},
 	scrollVertically:function(event) {
+			if ("buttons" in event && event.buttons===0) {
+				flipbook.stopScrollVertically();
+				return;
+			}
 		event.preventDefault();
 		if (flipbook.scrollTarget!=="") {
 			var scrollTarget=lib("#"+flipbook.scrollTarget).targets[0],
