@@ -2104,7 +2104,7 @@ if (typeof(lib)=="undefined" && typeof(__)=="undefined") {
 			if (!(element.guid in __.registeredListeners)) {
 				__.registeredListeners[element.guid]={};
 			}
-			if (!(eventType in __.registeredListeners[elements[i].guid])) {
+			if (!(eventType in __.registeredListeners[element.guid])) {
 				__.registeredListeners[element.guid][eventType]={};
 			}
 			__.registeredListeners[element.guid][eventType]["add_"+ts]={ F:function(e) { e.libTarget=element; __.wheel(e, fn); }, oF:fn };
