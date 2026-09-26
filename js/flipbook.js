@@ -223,11 +223,9 @@ var flipbook={
 	},
 	thumbMouseover:function(event) {
 		lib([event.libTarget]).css({ zIndex:2 });
-		lib([event.libTarget]).find("img").to({ style: { left:"-"+1*(docWidth/docHeight)+"em", top:"-1em", height:"calc(100% + 2em)" } }, { duration:125 });
 	},
 	thumbMouseout:function(event) {
 		lib([event.libTarget]).css({ zIndex:1 });
-		lib([event.libTarget]).find("img").to({ style: { left:"0em", top:"0em", height:"100%" } }, { duration:125 });
 	},
 	currentIndex:0,
 	interval:-1,
