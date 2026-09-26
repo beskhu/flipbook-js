@@ -25,7 +25,11 @@ var flipbook={
 			} else {
 				flipbook.page("1", true);
 			}
-			if ("orientation" in window && Math.abs(window.orientation)===90) { flipbook.orientation="landscape"; } else if (Math.abs(window.orientation)%180===0) { flipbook.orientation="portrait"; }
+			if ("orientation" in window && Math.abs(window.orientation)===90) {
+                flipbook.orientation="landscape";
+            } else if (Math.abs(window.orientation)%180===0) {
+                flipbook.orientation="portrait";
+            }
 			flipbook.listeners();
 			if (flipbook.history) {
 				flipbook.history.replaceState({ addr:lib.address.pathname().replace(/^[^\/]+/, "") }, document.title, lib.address.pathname().replace(/^[^\/]+/, ""));
@@ -46,7 +50,14 @@ var flipbook={
 					flipbook.page(addr, false);
 				}
 			});
-			lib("window").on("orientationchange", function(event) { if (Math.abs(window.orientation)===90) { flipbook.orientation="landscape"; } else { flipbook.orientation="portrait"; } flipbook.scrollDirectlyTo(0,0); });
+			lib("window").on("orientationchange", function(event) {
+                if (Math.abs(window.orientation)===90) {
+                    flipbook.orientation="landscape";
+                } else {
+                    flipbook.orientation="portrait";
+                }
+                flipbook.scrollDirectlyTo(0,0);
+            });
 		}
 	},
 	onKeyDown:function(event) {
@@ -71,7 +82,9 @@ var flipbook={
 	 	if (typeof(onresize)==="undefined") { flipbook.scrollTop(); }
 	 	flipbook.calcPositions();
 	 	flipbook.scrollDirectlyTo(0,0);
-	 	flipbook.setScrollBars();
+        lib().preventMultipleThrowsDuringPeriod(function() {
+            flipbook.setScrollBars();
+        }, 250);
 	},
 	setFontSize:function() {
 		var ltwh=lib("#wrapper").ltwhRelativeTo(document.body)[0];
@@ -735,6 +748,8 @@ var flipbook={
 		var fs=parseFloat(lib("#pages_view").css("font-size", "px")[0]);
 		var turnPoints, point, checked, currentButton=flipbook.currentTurnButton, coordinates=flipbook.coordinates, angle, normal, x, y, baseX, baseY, transformOrigin, a, b, c, l, t, lo, to, corX, corY, corXBack, corYBack, diff, containerPointsAfterRotation, foldingPointsRelativeToSheet, slopeToXAxis, angleBackImg, isIsoceles;
 		var endTransition=false;
+
+		var shadowLightOpacity=1;
 		if (mousemoveOrAuto==="auto") {
 			var angleStep=Math.abs(flipbook.angleDelta);
 			if (flipbook.angle!==0 && (!isFinite(angleStep) || angleStep<=0)) {
@@ -773,7 +788,11 @@ var flipbook={
 			if (flipbook.finishMove || flipbook.context==="goToPageAuto") {
 				var remainingDistance=Math.abs(targetDistance-flipbook.distCurrent);
 				var remainingAngle=Math.abs(flipbook.angle);
-				if (remainingDistance<=distanceStep*3+0.000001 && remainingAngle<=angleStep*3+0.000001) {
+
+				var remainingFrames=Math.max(distanceStep>0?remainingDistance/distanceStep:0, angleStep>0?remainingAngle/angleStep:0);
+
+				shadowLightOpacity=Math.min(1, remainingFrames/10);
+				if (remainingDistance<=distanceStep*2+0.000001 && remainingAngle<=angleStep*2+0.000001) {
 					flipbook.distCurrent=targetDistance;
 					flipbook.angle=0;
 				}
@@ -1083,7 +1102,9 @@ var flipbook={
 		lib("#flipbookDualLeft .flipbookBehind").css({ opacity:1 });
 		lib("#flipbookDualRight .flipbookBehind").css({ opacity:1 });
 		if (!endTransition) {
-			lib([currentButton.parentNode]).find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:1 });
+			lib([currentButton.parentNode]).find(".flipbookBack>img, .flipbookBack>.overlay").css({ opacity:1 });
+
+				lib([currentButton.parentNode]).find(".shadow, .light").css({ opacity:shadowLightOpacity });
 		}
 		flipbook.animating=true;
 		var r;
@@ -1161,9 +1182,9 @@ var flipbook={
 			lib("#flipbookDualRight").css({ zIndex:1 });
 			lib("#flipbookDualLeft .flipbookBack").css({ opacity:1 });
 			lib("#flipbookDualRight .flipbookBack").css({ opacity:0, visibility:"hidden" });
-			lib("#flipbookDualLeft .flipbookBack .light").css({ opacity:!endTransition?1:0, background:"linear-gradient("+(flipbook.angle*180/Math.PI+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(255, 255, 255, "+((1-pct/100)*1/2+0.25)+") 0%, rgba(255, 255, 255, 0) "+(100-pct)+"%)" });
+			lib("#flipbookDualLeft .flipbookBack .light").css({ opacity:!endTransition?shadowLightOpacity:0, background:"linear-gradient("+(flipbook.angle*180/Math.PI+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(255, 255, 255, "+((1-pct/100)*1/2+0.25)+") 0%, rgba(255, 255, 255, 0) "+(100-pct)+"%)" });
 			lib("#flipbookDualLeft .flipbookBack .overlay").css({ opacity:!endTransition?1:0, backgroundColor:"rgba(0,0,0,"+((1-pct/100)*1/2)+")" });
-			lib("#flipbookDualLeft .flipbookBack .shadow").css({ opacity:!endTransition?1:0, background:"linear-gradient("+(flipbook.angle*180/Math.PI+180+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, "+((1-pct/100)*3/4+0.25)+") "+(100-pct)+"%)" });
+			lib("#flipbookDualLeft .flipbookBack .shadow").css({ opacity:!endTransition?shadowLightOpacity:0, background:"linear-gradient("+(flipbook.angle*180/Math.PI+180+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, "+((1-pct/100)*3/4+0.25)+") "+(100-pct)+"%)" });
 			lib("#flipbookDualLeft .flipbookBehind .shadow").css({ background:"linear-gradient("+(flipbook.angle*180/Math.PI+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, "+((1-pct/100)*3/4+0.25)+") "+pct+"%)" });
 			lib("#flipbookDualRight .flipbookBack .light").css({ opacity:0 });
 			lib("#flipbookDualRight .flipbookBack .overlay").css({ opacity:0 });
@@ -1179,9 +1200,9 @@ var flipbook={
 			lib("#flipbookDualLeft").css({ zIndex:1 });
 			lib("#flipbookDualRight .flipbookBack").css({ opacity:1 });
 			lib("#flipbookDualLeft .flipbookBack").css({ opacity:0, visibility:"hidden" });
-			lib("#flipbookDualRight .flipbookBack .light").css({ opacity:!endTransition?1:0, background:"linear-gradient("+(flipbook.angle*180/Math.PI+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(255, 255, 255, "+((1-pct/100)*1/2+0.25)+") 0%, rgba(255, 255, 255, 0) "+(100-pct)+"%)" });
+			lib("#flipbookDualRight .flipbookBack .light").css({ opacity:!endTransition?shadowLightOpacity:0, background:"linear-gradient("+(flipbook.angle*180/Math.PI+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(255, 255, 255, "+((1-pct/100)*1/2+0.25)+") 0%, rgba(255, 255, 255, 0) "+(100-pct)+"%)" });
 			lib("#flipbookDualRight .flipbookBack .overlay").css({ opacity:!endTransition?1:0, backgroundColor:"rgba(0,0,0,"+((1-pct/100)*1/2)+")" });
-			lib("#flipbookDualRight .flipbookBack .shadow").css({ opacity:!endTransition?1:0, background:"linear-gradient("+(flipbook.angle*180/Math.PI+180+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, "+((1-pct/100)*3/4+0.25)+") "+(100-pct/2)+"%)" });
+			lib("#flipbookDualRight .flipbookBack .shadow").css({ opacity:!endTransition?shadowLightOpacity:0, background:"linear-gradient("+(flipbook.angle*180/Math.PI+180+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, "+((1-pct/100)*3/4+0.25)+") "+(100-pct/2)+"%)" });
 			lib("#flipbookDualRight .flipbookBehind .shadow").css({ background:"linear-gradient("+(flipbook.angle*180/Math.PI+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, "+((1-pct/100)*3/4+0.25)+") "+pct+"%)" });
 			lib("#flipbookDualLeft .flipbookBack .light").css({ opacity:0 });
 			lib("#flipbookDualLeft .flipbookBack .overlay").css({ opacity:0 });
