@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lorem ipsum — Introduction</title>
+    <style>
+        :root { color-scheme: light; font-family: Georgia, "Times New Roman", serif; }
+        * { box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; margin: 0; }
+        body { background: #f4efe4; color: #29251f; overflow: auto; }
+        main {
+            min-height: 100%;
+            padding: clamp(2rem, 7vw, 5.5rem);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background:
+                linear-gradient(rgba(244, 239, 228, 0.94), rgba(244, 239, 228, 0.94)),
+                repeating-linear-gradient(0deg, transparent 0 23px, #b9aa8b 24px);
+        }
+        header { border-top: 0.4rem solid #a4482d; padding-top: 1.4rem; }
+        .eyebrow {
+            margin: 0 0 1rem;
+            color: #a4482d;
+            font: 700 0.8rem/1.2 Arial, sans-serif;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+        h1 { max-width: 10ch; margin: 0; font-size: clamp(2.5rem, 8vw, 5.5rem); line-height: 0.95; }
+        article { max-width: 40rem; margin-top: clamp(2rem, 8vh, 6rem); }
+        .lead { font-size: clamp(1.15rem, 2.4vw, 1.7rem); line-height: 1.5; }
+        p { font-size: clamp(0.95rem, 1.7vw, 1.2rem); line-height: 1.7; }
+        footer { margin-top: 2rem; font: 0.8rem Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <p class="eyebrow">Chapitre premier</p>
+            <h1>Lorem ipsum dolor</h1>
+        </header>
+        <article>
+            <p class="lead">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vel sapien vitae lectus fermentum porta.</p>
+            <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+        </article>
+        <footer>Page HTML interactive · 09</footer>
+    </main>
+</body>
+</html>

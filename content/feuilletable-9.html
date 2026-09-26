@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lorem ipsum — Lecture</title>
+    <style>
+        :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; }
+        * { box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; margin: 0; }
+        body { background: #17324d; color: #f7f2e8; overflow: auto; }
+        main {
+            min-height: 100%;
+            padding: clamp(2rem, 7vw, 5.5rem);
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: clamp(2rem, 6vh, 5rem);
+        }
+        header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #90b7c8; padding-bottom: 1rem; }
+        header span { color: #90b7c8; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; }
+        article { align-self: center; max-width: 42rem; }
+        h1 { margin: 0 0 2rem; color: #f2b84b; font: 700 clamp(2.4rem, 7vw, 5rem)/1 Georgia, serif; }
+        .columns { columns: 2 14rem; column-gap: clamp(1.5rem, 4vw, 3rem); }
+        p { margin: 0 0 1.2rem; font-size: clamp(0.95rem, 1.7vw, 1.15rem); line-height: 1.65; }
+        blockquote {
+            margin: 1.5rem 0;
+            padding: 1rem 0 1rem 1.2rem;
+            border-left: 0.25rem solid #f2b84b;
+            color: #cfe2e8;
+            break-inside: avoid;
+        }
+        footer { color: #90b7c8; font-size: 0.8rem; text-align: right; }
+    </style>
+</head>
+<body>
+    <main>
+        <header><span>Notes et fragments</span><span>10</span></header>
+        <article>
+            <h1>Une page à parcourir</h1>
+            <div class="columns">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.</p>
+                <blockquote>“Curabitur blandit tempus porttitor. Donec sed odio dui.”</blockquote>
+                <p>Maecenas faucibus mollis interdum. Nullam quis risus eget urna mollis ornare vel eu leo. Aenean lacinia bibendum nulla sed consectetur.</p>
+                <p>Vestibulum id ligula porta felis euismod semper. Cras mattis consectetur purus sit amet fermentum.</p>
+            </div>
+        </article>
+        <footer>Vous pouvez sélectionner et faire défiler ce contenu.</footer>
+    </main>
+</body>
+</html>

@@ -190,30 +190,62 @@
 	<div id="wrapper">
 		<div id="subwrapper" style="height:100%;" class="flipbook_more_resizable">
 			<?php
-				$i=0;
+				$contentDirectory=__DIR__.'/content';
+				$contentUrl='./content/';
+				$contentFiles=glob($contentDirectory.'/*.{jpg,jpeg,png,gif,webp,html,htm}', GLOB_BRACE);
+
+				natcasesort($contentFiles);
+				$contentFiles=array_values($contentFiles);
 				$imgs=[];
-				foreach(glob(__DIR__.'/images/*.jpg') as $v) {
-					if ($i===0) {
-						$imageSize=getimagesize($v);
+				$pageTypes=[];
+				$imageSize=[210, 297];
+				$imageSizeDetected=false;
+
+				foreach ($contentFiles as $v) {
+					$extension=strtolower(pathinfo($v, PATHINFO_EXTENSION));
+					$pageType=in_array($extension, ['html', 'htm'], true)?'html':'image';
+					$imgs[]=$contentUrl.rawurlencode(basename($v));
+					$pageTypes[]=$pageType;
+
+					if ($pageType==='image' && !$imageSizeDetected) {
+						$detectedSize=@getimagesize($v);
+						if ($detectedSize) {
+							$imageSize=[$detectedSize[0], $detectedSize[1]];
+							$imageSizeDetected=true;
+						}
 					}
-					$imgs[]=preg_replace('/^(.*)\/images\//', "./images/", $v);
-					$i++;
 				}
+
 				$thumbs=[];
-				foreach(glob(__DIR__.'/thumbs/*.jpg') as $v) {
+				foreach(glob(__DIR__.'/thumbs/*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE) as $v) {
 					$thumbs[]=preg_replace('/^(.*)\/thumbs\//', "./thumbs/", $v);
 				}
+				natcasesort($thumbs);
+				$thumbs=array_values($thumbs);
+
+				function flipbookPageContent($url, $type, $extraClass='') {
+					$safeUrl=htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+					$isHtml=$type==='html';
+					echo '<div class="pageContent'.($extraClass?' '.$extraClass:'').'" data-page-url="'.$safeUrl.'" data-page-type="'.($isHtml?'html':'image').'">';
+					echo '<div class="imageContent"'.($isHtml?' hidden':'').'><img src="'.($isHtml?'':$safeUrl).'" alt="" /></div>';
+					echo '<div class="htmlContent"'.($isHtml?'':' hidden').'><iframe src="'.($isHtml?$safeUrl:'').'" title="Contenu de la page" loading="eager"></iframe></div>';
+					echo '</div>';
+				}
+
 				echo '
 			<script>
 				var imgs='.json_encode($imgs, JSON_UNESCAPED_SLASHES).';
+				var pageTypes='.json_encode($pageTypes, JSON_UNESCAPED_SLASHES).';
 				var thumbs='.json_encode($thumbs, JSON_UNESCAPED_SLASHES).';
 				var docWidth='.$imageSize[0].';
 				var docHeight='.$imageSize[1].';
 			</script>
 			<div id="preload" style="width:0; height:0; visibility:hidden; overflow:hidden;">';
 				foreach ($imgs as $k=>$v) {
-					echo '
+					if ($pageTypes[$k]==='image') {
+						echo '
 				<img src="'.htmlspecialchars($v, ENT_QUOTES, 'UTF-8').'" />';
+					}
 				}
 			echo '
 			</div>
@@ -223,9 +255,15 @@
 				<div class="flipbook_content">
 					<div class="flipbook_sub">
 					<?php
-						for ($i=0; $i<count($thumbs); $i++) {
+						for ($i=0; $i<count($imgs); $i++) {
 							echo '
-						<a class="thumb" data-index="'.$i.'" href="./'.($i+1).'"><img src="'.htmlspecialchars($thumbs[$i], ENT_QUOTES, 'UTF-8').'" alt="aller à la page '.($i+1).'" /></a>';
+						<a class="thumb" data-index="'.$i.'" href="./'.($i+1).'">';
+							if (isset($thumbs[$i])) {
+								echo '<img src="'.htmlspecialchars($thumbs[$i], ENT_QUOTES, 'UTF-8').'" alt="aller à la page '.($i+1).'" />';
+							} else {
+								echo '<span class="thumbFallback">Page '.($i+1).'</span>';
+							}
+							echo '</a>';
 						}
 					?>
 					</div>
@@ -244,16 +282,16 @@
 					<div id="flipbookDual">
 						<div id="flipbookDualLeft" class="flipbookDualPage">
 							<div id="pageLeftBack" class="flipbookBack flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[1] ?? $imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php $initialIndex=isset($imgs[1])?1:0; flipbookPageContent($imgs[$initialIndex] ?? '', $pageTypes[$initialIndex] ?? 'image'); ?>
 								<div id="leftOverlay" class="overlay"></div>
 								<div id="leftBackShadow" class="shadow"></div>
 								<div id="leftBackLight" class="light"></div>
 							</div>
 							<div id="pageLeftFront" class="flipbookFront flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php flipbookPageContent($imgs[0] ?? '', $pageTypes[0] ?? 'image'); ?>
 							</div>
 							<div id="pageLeftBehind" class="flipbookBehind flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php flipbookPageContent($imgs[0] ?? '', $pageTypes[0] ?? 'image'); ?>
 								<div id="leftBehindShadow" class="shadow"></div>
 							</div>
 							<button id="dualTopLeft" class="turnButton" onmouseover="flipbook.showTurnPossibility('left', this);" onmouseout="flipbook.hideTurnPossibility('left', this);" onmousedown="flipbook.initTurnManual(event, 'left', this);"></button>
@@ -261,16 +299,16 @@
 						</div>
 						<div id="flipbookDualRight" class="flipbookDualPage">
 							<div id="pageRightBack" class="flipbookBack flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[1] ?? $imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php $initialIndex=isset($imgs[1])?1:0; flipbookPageContent($imgs[$initialIndex] ?? '', $pageTypes[$initialIndex] ?? 'image'); ?>
 								<div id="rightBackOverlay" class="overlay"></div>
 								<div id="rightBackShadow" class="shadow"></div>
 								<div id="rightBackLight" class="light"></div>
 							</div>
 							<div id="pageRightFront" class="flipbookFront flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php flipbookPageContent($imgs[0] ?? '', $pageTypes[0] ?? 'image'); ?>
 							</div>
 							<div id="pageRightBehind" class="flipbookBehind flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[2] ?? $imgs[1] ?? $imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php $initialIndex=isset($imgs[2])?2:(isset($imgs[1])?1:0); flipbookPageContent($imgs[$initialIndex] ?? '', $pageTypes[$initialIndex] ?? 'image'); ?>
 								<div id="rightBehindShadow" class="shadow"></div>
 							</div>
 							<button id="dualTopRight" class="turnButton" onmouseover="flipbook.showTurnPossibility('right', this);" onmouseout="flipbook.hideTurnPossibility('left', this);" onmousedown="flipbook.initTurnManual(event, 'right', this);"></button>
@@ -280,20 +318,20 @@
 					<div id="flipbookMono">
 						<div id="flipbookMonoSub">
 							<div class="flipbookBack flipbookMask">
-								<div class="imgCont"><img src="<?php echo htmlspecialchars($imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" /></div>
+								<?php flipbookPageContent($imgs[0] ?? '', $pageTypes[0] ?? 'image', 'imgCont'); ?>
 								<div id="monoBackOverlay" class="overlay"></div>
 								<div id="monoBackShadow" class="shadow"></div>
 								<div id="monoBackLight" class="light"></div>
 							</div>
 							<div class="flipbookFront flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php flipbookPageContent($imgs[0] ?? '', $pageTypes[0] ?? 'image'); ?>
 							</div>
 							<div class="flipbookBehind flipbookBehindF flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[1] ?? $imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php $initialIndex=isset($imgs[1])?1:0; flipbookPageContent($imgs[$initialIndex] ?? '', $pageTypes[$initialIndex] ?? 'image'); ?>
 								<div id="monoShadow" class="shadow"></div>
 							</div>
 							<div class="flipbookBehind flipbookBehindB flipbookMask">
-								<img src="<?php echo htmlspecialchars($imgs[0] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+								<?php flipbookPageContent($imgs[0] ?? '', $pageTypes[0] ?? 'image'); ?>
 								<div id="monoShadow" class="shadow"></div>
 							</div>
 							<button id="monoTopLeft" class="turnButton" onmouseover="flipbook.showTurnPossibility('left', this);" onmouseout="flipbook.hideTurnPossibility('left', this);" onmousedown="flipbook.initTurnManual(event, 'left', this);"></button>

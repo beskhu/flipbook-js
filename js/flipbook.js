@@ -38,9 +38,7 @@ var flipbook={
 			lib("window").on("wheel", flipbook.scrollWheel);
 			lib("window").on("mouseup", flipbook.stopScrollVertically);
 			lib("window").on("mouseup", flipbook.stopScrollHorizontally);
-
 				lib("window").on("blur", flipbook.stopScrollVertically);
-
 				lib("window").on("blur", flipbook.stopScrollHorizontally);
 			lib("window").on("keydown", flipbook.onKeyDown);
 			lib("window").on("keyup", flipbook.onKeyUp);
@@ -240,19 +238,19 @@ var flipbook={
 	animating:false,
 	futureIndex:-1,
 	isDownOrTouched:false,
-	selectPageImage:function(referenceImage, imageUrl, style) {
-		if (!referenceImage || !referenceImage.parentNode || !imageUrl) return [];
-		var images=referenceImage.parentNode.querySelectorAll("img[data-flipbook-bank='true']");
-		var absoluteUrl=new URL(imageUrl, document.baseURI).href;
-		var selectedImage=null;
-		for (var i=0; i<images.length; i++) {
-			var selected=images[i].src===absoluteUrl;
-			lib([images[i]]).css({ visibility:selected?"visible":"hidden" });
-			if (selected) selectedImage=images[i];
+	selectPageImage:function(referenceContent, pageUrl, style) {
+		if (!referenceContent || !referenceContent.parentNode || !pageUrl) return [];
+		var contents=referenceContent.parentNode.querySelectorAll(".pageContent[data-flipbook-bank='true']");
+		var selectedContent=null;
+		for (var i=0; i<contents.length; i++) {
+			var selected=contents[i].getAttribute("data-page-url")===pageUrl;
+			lib([contents[i]]).css({ visibility:selected?"visible":"hidden", pointerEvents:selected?"auto":"none" });
+			contents[i].setAttribute("aria-hidden", selected?"false":"true");
+			if (selected) selectedContent=contents[i];
 		}
-		if (selectedImage) {
-			if (style) lib([selectedImage]).css(style);
-			return [selectedImage];
+		if (selectedContent) {
+			if (style) lib([selectedContent]).css(style);
+			return [selectedContent];
 		}
 		return [];
 	},
@@ -268,8 +266,8 @@ var flipbook={
 	},
 	closeDualSeam:function(index) {
 		if (flipbook.mode!=="dual" || index<=0 || index>=imgs.length-1) return;
-		var leftPage=lib("#flipbookDualLeft .flipbookFront>img").targets[0];
-		var rightPage=lib("#flipbookDualRight .flipbookFront>img").targets[0];
+		var leftPage=lib("#flipbookDualLeft .flipbookFront>.pageContent").targets[0];
+		var rightPage=lib("#flipbookDualRight .flipbookFront>.pageContent").targets[0];
 		if (!leftPage || !rightPage) return;
 		var leftRect=leftPage.getBoundingClientRect();
 		var rightRect=rightPage.getBoundingClientRect();
@@ -281,6 +279,41 @@ var flipbook={
 		lib("#flipbookDualLeft").css({ left:(-flipbook.w/2+halfGap)+"em" });
 		lib("#flipbookDualRight").css({ left:(flipbook.w/2-halfGap)+"em" });
 	},
+	showDualSpread:function(index) {
+		if (flipbook.mode!=="dual" || imgs.length===0) return;
+		index=Math.max(0, Math.min(imgs.length-1, parseInt(index, 10)||0));
+		if (index>0 && index<imgs.length-1 && index%2===0) index--;
+		flipbook.currentIndex=index;
+		flipbook.futureIndex=index;
+		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront, .flipbookBack").css({ left:"0em", top:"0em", transform:"translate(0em, 0em) rotate(0deg)" });
+		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>.pageContent").css({ left:"0em", top:"0em", opacity:1, transform:"rotate(0deg)" });
+		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack").css({ opacity:1, visibility:"hidden", zIndex:0 });
+		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0, left:"0em", top:"0em", transform:"rotate(0deg)" });
+		if (index===0) {
+			lib("#flipbookDualLeft").css({ opacity:0, left:"0em", zIndex:1 });
+			lib("#flipbookDualRight").css({ opacity:1, left:"0em", zIndex:2 });
+			flipbook.selectPageImage(lib("#flipbookDualRight .flipbookFront>.pageContent").targets[0], imgs[0], { opacity:1 });
+			if (imgs.length>1) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBack>.pageContent").targets[0], imgs[1]);
+			if (imgs.length>2) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBehind>.pageContent").targets[0], imgs[2]);
+		} else if (index===imgs.length-1) {
+			lib("#flipbookDualLeft").css({ opacity:1, left:"0em", zIndex:2 });
+			lib("#flipbookDualRight").css({ opacity:0, left:"0em", zIndex:1 });
+			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookFront>.pageContent").targets[0], imgs[index], { opacity:1 });
+			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBack>.pageContent").targets[0], imgs[index-1]);
+			if (index-2>=0) flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBehind>.pageContent").targets[0], imgs[index-2]);
+		} else {
+			lib("#flipbookDualLeft").css({ opacity:1, zIndex:1 });
+			lib("#flipbookDualRight").css({ opacity:1, zIndex:1 });
+			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookFront>.pageContent").targets[0], imgs[index], { opacity:1 });
+			flipbook.selectPageImage(lib("#flipbookDualRight .flipbookFront>.pageContent").targets[0], imgs[index+1], { opacity:1 });
+			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBack>.pageContent").targets[0], imgs[index-1]);
+			if (index-2>=0) flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBehind>.pageContent").targets[0], imgs[index-2]);
+			if (index+2<imgs.length) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBack>.pageContent").targets[0], imgs[index+2]);
+			if (index+3<imgs.length) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBehind>.pageContent").targets[0], imgs[index+3]);
+		}
+		flipbook.centerDualOnOccupiedWidth(index);
+		flipbook.closeDualSeam(index);
+	},
 	showFirstPageWithoutAnimation:function() {
 		flipbook.currentIndex=0;
 		flipbook.futureIndex=0;
@@ -289,13 +322,13 @@ var flipbook={
 			lib("#flipbookDualRight").css({ opacity:1, left:"0em" });
 			lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront, .flipbookBack").css({ left:"0em", top:"0em", transform:"translate(0em, 0em) rotate(0deg)" });
 			lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack").css({ opacity:1, visibility:"hidden", zIndex:0 });
-			var dualFront=lib("#flipbookDualRight").find(".flipbookFront>img").targets[0];
+			var dualFront=lib("#flipbookDualRight").find(".flipbookFront>.pageContent").targets[0];
 			var selected=flipbook.selectPageImage(dualFront, imgs[0], { opacity:1, left:"0em", top:"0em", transform:"rotate(0deg)" });
 			flipbook.centerDualOnOccupiedWidth(0);
 		} else {
 			lib("#flipbookMono").find(".flipbookFront, .flipbookBack").css({ left:"0em", top:"0em", transform:"translate(0em, 0em) rotate(0deg)" });
 			lib("#flipbookMono").find(".flipbookBack").css({ opacity:0, visibility:"hidden" });
-			var monoFront=lib("#flipbookMono").find(".flipbookFront>img").targets[0];
+			var monoFront=lib("#flipbookMono").find(".flipbookFront>.pageContent").targets[0];
 			flipbook.selectPageImage(monoFront, imgs[0], { opacity:1, left:"0em", top:"0em", transform:"rotate(0deg)" });
 		}
 	},
@@ -316,75 +349,90 @@ var flipbook={
 		flipbook.cancelMove=false;
 		flipbook.finishMove=false;
 		flipbook.endMove="";
-
 		var index=Math.max(0, Math.min(imgs.length-1, parseInt(flipbook.currentIndex, 10)||0));
 		if (flipbook.mode==="dual" && index>0 && index<imgs.length-1 && index%2===0) {
 			index--;
 		}
 		flipbook.currentIndex=index;
 		flipbook.futureIndex=index;
-
 		if (flipbook.mode==="mono") {
 			lib("#flipbookMono").find(".flipbookFront, .flipbookBack").css({ left:"0em", top:"0em", opacity:1, transform:"translate(0em, 0em) rotate(0deg)" });
-			lib("#flipbookMono").find(".flipbookFront>img, .flipbookBack>.imgCont").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
+			lib("#flipbookMono").find(".flipbookFront>.pageContent, .flipbookBack>.pageContent").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
 			lib("#flipbookMono").find(".flipbookBack").css({ opacity:0, visibility:"hidden", zIndex:0 });
-			flipbook.selectPageImage(lib("#flipbookMono .flipbookFront>img").targets[0], imgs[index], { opacity:1 });
-			flipbook.selectPageImage(lib("#flipbookMono .flipbookBack>.imgCont>img").targets[0], imgs[index]);
-			if (index+1<imgs.length) flipbook.selectPageImage(lib("#flipbookMono .flipbookBehindF>img").targets[0], imgs[index+1]);
-			if (index-1>=0) flipbook.selectPageImage(lib("#flipbookMono .flipbookBehindB>img").targets[0], imgs[index-1]);
+			flipbook.selectPageImage(lib("#flipbookMono .flipbookFront>.pageContent").targets[0], imgs[index], { opacity:1 });
+			flipbook.selectPageImage(lib("#flipbookMono .flipbookBack>.pageContent").targets[0], imgs[index]);
+			if (index+1<imgs.length) flipbook.selectPageImage(lib("#flipbookMono .flipbookBehindF>.pageContent").targets[0], imgs[index+1]);
+			if (index-1>=0) flipbook.selectPageImage(lib("#flipbookMono .flipbookBehindB>.pageContent").targets[0], imgs[index-1]);
 			lib("#monoTopLeft, #monoBottomLeft").css({ display:index===0?"none":"block" });
 			lib("#monoTopRight, #monoBottomRight").css({ display:index===imgs.length-1?"none":"block" });
 			return;
 		}
-
 		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront, .flipbookBack").css({ left:"0em", top:"0em", transform:"translate(0em, 0em) rotate(0deg)" });
-		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>img").css({ left:"0em", top:"0em", opacity:1, transform:"rotate(0deg)" });
+		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>.pageContent").css({ left:"0em", top:"0em", opacity:1, transform:"rotate(0deg)" });
 		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack").css({ opacity:1, visibility:"hidden", zIndex:0 });
-		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0, transform:"rotate(0deg)", top:"0em" });
+		lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0, transform:"rotate(0deg)", top:"0em" });
 		lib("#flipbookDualLeft .flipbookBehind, #flipbookDualRight .flipbookBehind").css({ opacity:0 });
-
 		if (index===0) {
 			lib("#flipbookDualLeft").css({ opacity:0, left:"0em", zIndex:1 });
 			lib("#flipbookDualRight").css({ opacity:1, left:"0em", zIndex:2 });
-			flipbook.selectPageImage(lib("#flipbookDualRight .flipbookFront>img").targets[0], imgs[0], { opacity:1 });
-			if (imgs.length>1) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBack>img").targets[0], imgs[1]);
-			if (imgs.length>2) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBehind>img").targets[0], imgs[2]);
+			flipbook.selectPageImage(lib("#flipbookDualRight .flipbookFront>.pageContent").targets[0], imgs[0], { opacity:1 });
+			if (imgs.length>1) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBack>.pageContent").targets[0], imgs[1]);
+			if (imgs.length>2) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBehind>.pageContent").targets[0], imgs[2]);
 		} else if (index===imgs.length-1) {
 			lib("#flipbookDualLeft").css({ opacity:1, left:"0em", zIndex:2 });
 			lib("#flipbookDualRight").css({ opacity:0, left:"0em", zIndex:1 });
-			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookFront>img").targets[0], imgs[index], { opacity:1 });
-			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBack>img").targets[0], imgs[index-1]);
-			if (index-2>=0) flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBehind>img").targets[0], imgs[index-2]);
+			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookFront>.pageContent").targets[0], imgs[index], { opacity:1 });
+			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBack>.pageContent").targets[0], imgs[index-1]);
+			if (index-2>=0) flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBehind>.pageContent").targets[0], imgs[index-2]);
 		} else {
 			lib("#flipbookDualLeft").css({ opacity:1, zIndex:1 });
 			lib("#flipbookDualRight").css({ opacity:1, zIndex:1 });
-			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookFront>img").targets[0], imgs[index], { opacity:1 });
-			flipbook.selectPageImage(lib("#flipbookDualRight .flipbookFront>img").targets[0], imgs[index+1], { opacity:1 });
-			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBack>img").targets[0], imgs[index-1]);
-			if (index-2>=0) flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBehind>img").targets[0], imgs[index-2]);
-			if (index+2<imgs.length) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBack>img").targets[0], imgs[index+2]);
-			if (index+3<imgs.length) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBehind>img").targets[0], imgs[index+3]);
+			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookFront>.pageContent").targets[0], imgs[index], { opacity:1 });
+			flipbook.selectPageImage(lib("#flipbookDualRight .flipbookFront>.pageContent").targets[0], imgs[index+1], { opacity:1 });
+			flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBack>.pageContent").targets[0], imgs[index-1]);
+			if (index-2>=0) flipbook.selectPageImage(lib("#flipbookDualLeft .flipbookBehind>.pageContent").targets[0], imgs[index-2]);
+			if (index+2<imgs.length) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBack>.pageContent").targets[0], imgs[index+2]);
+			if (index+3<imgs.length) flipbook.selectPageImage(lib("#flipbookDualRight .flipbookBehind>.pageContent").targets[0], imgs[index+3]);
 		}
 		flipbook.centerDualOnOccupiedWidth(index);
 		flipbook.closeDualSeam(index);
 	},
 	preparePersistentPagePairs:function() {
-		var selector=".flipbookFront>img, .flipbookBack>img, .flipbookBack>.imgCont>img, .flipbookBehind>img";
-		var initialImages=lib(selector).targets;
-		for (var imageIndex=0; imageIndex<initialImages.length; imageIndex++) {
-			var original=initialImages[imageIndex];
+		var selector=".flipbookFront>.pageContent, .flipbookBack>.pageContent, .flipbookBehind>.pageContent";
+		var initialContents=lib(selector).targets;
+		for (var contentIndex=0; contentIndex<initialContents.length; contentIndex++) {
+			var original=initialContents[contentIndex];
 			if (original.getAttribute("data-flipbook-bank")==="true") continue;
 			var parent=original.parentNode;
-			var originalUrl=original.src;
+			var originalUrl=original.getAttribute("data-page-url");
 			for (var pageIndex=0; pageIndex<imgs.length; pageIndex++) {
-				var pageImage=original.cloneNode(false);
-				pageImage.src=imgs[pageIndex];
-				pageImage.setAttribute("data-flipbook-bank", "true");
-				pageImage.setAttribute("data-page-index", pageIndex);
-				pageImage.setAttribute("data-pair-index", Math.floor(pageIndex/2));
-				pageImage.setAttribute("data-pair-face", pageIndex%2===0?"front":"back");
-				pageImage.style.visibility=(pageImage.src===originalUrl)?"visible":"hidden";
-				parent.insertBefore(pageImage, original);
+				var pageContent=original.cloneNode(true);
+				var pageType=pageTypes[pageIndex]||"image";
+				var imageContent=pageContent.querySelector(".imageContent");
+				var htmlContent=pageContent.querySelector(".htmlContent");
+				var image=imageContent?imageContent.querySelector("img"):null;
+				var iframe=htmlContent?htmlContent.querySelector("iframe"):null;
+				pageContent.setAttribute("data-flipbook-bank", "true");
+				pageContent.setAttribute("data-page-index", pageIndex);
+				pageContent.setAttribute("data-page-url", imgs[pageIndex]);
+				pageContent.setAttribute("data-page-type", pageType);
+				pageContent.setAttribute("data-pair-index", Math.floor(pageIndex/2));
+				pageContent.setAttribute("data-pair-face", pageIndex%2===0?"front":"back");
+				pageContent.style.visibility=imgs[pageIndex]===originalUrl?"visible":"hidden";
+				pageContent.style.pointerEvents=imgs[pageIndex]===originalUrl?"auto":"none";
+				pageContent.setAttribute("aria-hidden", imgs[pageIndex]===originalUrl?"false":"true");
+				if (imageContent) imageContent.hidden=pageType!=="image";
+				if (htmlContent) htmlContent.hidden=pageType!=="html";
+				if (image) {
+					if (pageType==="image") image.src=imgs[pageIndex];
+					else image.removeAttribute("src");
+				}
+				if (iframe) {
+					if (pageType==="html") iframe.src=imgs[pageIndex];
+					else iframe.removeAttribute("src");
+					iframe.title="Page "+(pageIndex+1);
+				}
+				parent.insertBefore(pageContent, original);
 			}
 			parent.removeChild(original);
 		}
@@ -407,11 +455,11 @@ var flipbook={
 		if (!flipbook.animating && page!==flipbook.currentIndex+1) {
 			if (flipbook.mode==="mono") {
 				if (targetIndex<flipbook.currentIndex) {
-					r=flipbook.selectPageImage(lib("#flipbookMono").find(".flipbookBack>.imgCont>img").targets[0], imgs[targetIndex+1]);
-					r=flipbook.selectPageImage(lib("#flipbookMono").find(".flipbookBehindB>img").targets[0], imgs[targetIndex]);
+					r=flipbook.selectPageImage(lib("#flipbookMono").find(".flipbookBack>.pageContent").targets[0], imgs[targetIndex+1]);
+					r=flipbook.selectPageImage(lib("#flipbookMono").find(".flipbookBehindB>.pageContent").targets[0], imgs[targetIndex]);
 				} else if (targetIndex>flipbook.currentIndex) {
-					r=flipbook.selectPageImage(lib("#flipbookMono").find(".flipbookBack>.imgCont>img").targets[0], imgs[targetIndex-1]);
-					r=flipbook.selectPageImage(lib("#flipbookMono").find(".flipbookBehindF>img").targets[0], imgs[targetIndex]);
+					r=flipbook.selectPageImage(lib("#flipbookMono").find(".flipbookBack>.pageContent").targets[0], imgs[targetIndex-1]);
+					r=flipbook.selectPageImage(lib("#flipbookMono").find(".flipbookBehindF>.pageContent").targets[0], imgs[targetIndex]);
 				}
 				flipbook.futureIndex=targetIndex;
 			} else {
@@ -421,25 +469,25 @@ var flipbook={
 				if (!(page%2===0 && page-1===flipbook.currentIndex)) {
 					flipbook.futureIndex=page-1;
 					if (flipbook.futureIndex>0 && flipbook.futureIndex<flipbook.currentIndex && flipbook.futureIndex<imgs.length-1) {
-						r=flipbook.selectPageImage(lib("#flipbookDualLeft").find(".flipbookBack>img").targets[0], imgs[flipbook.futureIndex+1]);
-						r=flipbook.selectPageImage(lib("#flipbookDualLeft").find(".flipbookBehind>img").targets[0], imgs[flipbook.futureIndex]);
+						r=flipbook.selectPageImage(lib("#flipbookDualLeft").find(".flipbookBack>.pageContent").targets[0], imgs[flipbook.futureIndex+1]);
+						r=flipbook.selectPageImage(lib("#flipbookDualLeft").find(".flipbookBehind>.pageContent").targets[0], imgs[flipbook.futureIndex]);
 						lib("#flipbookDualLeft").find(".flipbookBehind").css({ opacity:1 });
 					} else if (flipbook.futureIndex>0 && flipbook.futureIndex>flipbook.currentIndex && flipbook.futureIndex<imgs.length-1) {
-						r=flipbook.selectPageImage(lib("#flipbookDualRight").find(".flipbookBack>img").targets[0], imgs[flipbook.futureIndex]);
+						r=flipbook.selectPageImage(lib("#flipbookDualRight").find(".flipbookBack>.pageContent").targets[0], imgs[flipbook.futureIndex]);
 						if (flipbook.futureIndex+1<imgs.length-1) {
 							lib("#flipbookDualRight").find(".flipbookBehind").css({ opacity:1 });
-							r=flipbook.selectPageImage(lib("#flipbookDualRight").find(".flipbookBehind>img").targets[0], imgs[flipbook.futureIndex+1]);
+							r=flipbook.selectPageImage(lib("#flipbookDualRight").find(".flipbookBehind>.pageContent").targets[0], imgs[flipbook.futureIndex+1]);
 						} else {
 							lib("#flipbookDualRight").find(".flipbookBehind").css({ opacity:0 });
 						}
 					} else if (flipbook.futureIndex===imgs.length-1) {
 						lib("#flipbookDualLeft").css({ opacity:1 });
-						r=flipbook.selectPageImage(lib("#flipbookDualRight").find(".flipbookBack>img").targets[0], imgs[flipbook.futureIndex]);
+						r=flipbook.selectPageImage(lib("#flipbookDualRight").find(".flipbookBack>.pageContent").targets[0], imgs[flipbook.futureIndex]);
 						lib("#flipbookDualRight").find(".flipbookBehind").css({ opacity:0 });
 						lib("#flipbookDualLeft").find(".flipbookBehind").css({ opacity:1 });
 					} else if (flipbook.futureIndex===0) {
 						lib("#flipbookDualRight").css({ opacity:1 });
-						r=flipbook.selectPageImage(lib("#flipbookDualLeft").find(".flipbookBack>img").targets[0], imgs[flipbook.futureIndex]);
+						r=flipbook.selectPageImage(lib("#flipbookDualLeft").find(".flipbookBack>.pageContent").targets[0], imgs[flipbook.futureIndex]);
 						lib("#flipbookDualLeft").find(".flipbookBehind").css({ opacity:0 });
 						lib("#flipbookDualRight").find(".flipbookBehind").css({ opacity:1 });
 					}
@@ -748,7 +796,6 @@ var flipbook={
 		var fs=parseFloat(lib("#pages_view").css("font-size", "px")[0]);
 		var turnPoints, point, checked, currentButton=flipbook.currentTurnButton, coordinates=flipbook.coordinates, angle, normal, x, y, baseX, baseY, transformOrigin, a, b, c, l, t, lo, to, corX, corY, corXBack, corYBack, diff, containerPointsAfterRotation, foldingPointsRelativeToSheet, slopeToXAxis, angleBackImg, isIsoceles;
 		var endTransition=false;
-
 		var shadowLightOpacity=1;
 		if (mousemoveOrAuto==="auto") {
 			var angleStep=Math.abs(flipbook.angleDelta);
@@ -788,9 +835,7 @@ var flipbook={
 			if (flipbook.finishMove || flipbook.context==="goToPageAuto") {
 				var remainingDistance=Math.abs(targetDistance-flipbook.distCurrent);
 				var remainingAngle=Math.abs(flipbook.angle);
-
 				var remainingFrames=Math.max(distanceStep>0?remainingDistance/distanceStep:0, angleStep>0?remainingAngle/angleStep:0);
-
 				shadowLightOpacity=Math.min(1, remainingFrames/10);
 				if (remainingDistance<=distanceStep*2+0.000001 && remainingAngle<=angleStep*2+0.000001) {
 					flipbook.distCurrent=targetDistance;
@@ -1102,8 +1147,7 @@ var flipbook={
 		lib("#flipbookDualLeft .flipbookBehind").css({ opacity:1 });
 		lib("#flipbookDualRight .flipbookBehind").css({ opacity:1 });
 		if (!endTransition) {
-			lib([currentButton.parentNode]).find(".flipbookBack>img, .flipbookBack>.overlay").css({ opacity:1 });
-
+			lib([currentButton.parentNode]).find(".flipbookBack>.pageContent, .flipbookBack>.overlay").css({ opacity:1 });
 				lib([currentButton.parentNode]).find(".shadow, .light").css({ opacity:shadowLightOpacity });
 		}
 		flipbook.animating=true;
@@ -1122,9 +1166,9 @@ var flipbook={
 			lib("#flipbookMono .flipbookBack .shadow").css({ background:"linear-gradient("+(flipbook.angle*180/Math.PI+180+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, "+((1-pct/100)*3/4+0.25)+") "+(100-pct)+"%)" });
 			lib("#flipbookMono .flipbookBehind .shadow").css({ background:"linear-gradient("+(flipbook.angle*180/Math.PI+90*(currentButton.id.substr(4).indexOf("Left")!==-1?1:-1))+"deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, "+((1-pct/100)*3/4+0.25)+") "+pct+"%)" });
 			lib([currentButton.parentNode]).find(".flipbookBack").css({ visibility:"visible", transformOrigin:transformOrigin, transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg) translate("+txContainer.toFixed(10)+"em, "+tyContainer.toFixed(10)+"em)" });
-			lib([currentButton.parentNode]).find(".flipbookBack>.imgCont, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ left:leftBack.toFixed(10)+"em", top:topBack.toFixed(10)+"em", transformOrigin:"0% 0% 0px", transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
+			lib([currentButton.parentNode]).find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ left:leftBack.toFixed(10)+"em", top:topBack.toFixed(10)+"em", transformOrigin:"0% 0% 0px", transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
 			lib([currentButton.parentNode]).find(".flipbookFront").css({ transformOrigin:transformOrigin, transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg) translate("+txContainer.toFixed(10)+"em, "+tyContainer.toFixed(10)+"em)" });
-			lib([currentButton.parentNode]).find(".flipbookFront>img").css({ left:leftFront.toFixed(10)+"em", top:(topFront-flipbook.h).toFixed(10)+"em", transformOrigin:"0% 100% 0px", transform:"rotate("+(-flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
+			lib([currentButton.parentNode]).find(".flipbookFront>.pageContent").css({ left:leftFront.toFixed(10)+"em", top:(topFront-flipbook.h).toFixed(10)+"em", transformOrigin:"0% 100% 0px", transform:"rotate("+(-flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
 			if (endTransition && flipbook.endMove!=="cancel" && flipbook.context==="initTurnManual") {
 				if (currentButton.id.substr(4).indexOf("Right")!==-1) {
 					flipbook.currentIndex++;
@@ -1144,25 +1188,25 @@ var flipbook={
 				if (mousemoveOrAuto!=="auto") {
 					if (flipbook.history) flipbook.history.pushState({ addr:parseInt(flipbook.currentIndex, 10)+1 }, document.title, flipbook.currentIndex+1);
 				}
-				var img1=lib("#flipbookMono").find(".flipbookFront>img").targets[0];
+				var img1=lib("#flipbookMono").find(".flipbookFront>.pageContent").targets[0];
 				lib([img1]).css({ opacity:0 });
 				r=flipbook.selectPageImage(img1, imgs[flipbook.currentIndex]);
 				img1=r[0];
 				lib([img1]).css({ opacity:1 });
-				lib("#flipbookMono").find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0 });
+				lib("#flipbookMono").find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0 });
 				lib("#flipbookMono").find(".flipbookFront, .flipbookBack").css({ transform:"translate(0em, 0em) rotate(0deg)", left:"0em", top:"0em" });
 				lib("#flipbookMono").find(".flipbookBack").css({ opacity:0 });
-				lib("#flipbookMono").find(".flipbookFront>img, .flipbookBack>.imgCont").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
+				lib("#flipbookMono").find(".flipbookFront>.pageContent, .flipbookBack>.pageContent").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
 				if (flipbook.currentIndex<=imgs.length-1) {
-					var img2=lib("#flipbookMono").find(".flipbookBack>.imgCont>img").targets[0];
+					var img2=lib("#flipbookMono").find(".flipbookBack>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img2, imgs[flipbook.currentIndex]);
 				}
 				if (flipbook.currentIndex+1<=imgs.length-1) {
-					var img3=lib("#flipbookMono").find(".flipbookBehindF>img").targets[0];
+					var img3=lib("#flipbookMono").find(".flipbookBehindF>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img3, imgs[flipbook.currentIndex+1]);
 				}
 				if (flipbook.currentIndex-1>=0) {
-					var img4=lib("#flipbookMono").find(".flipbookBehindB>img").targets[0];
+					var img4=lib("#flipbookMono").find(".flipbookBehindB>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img4, imgs[flipbook.currentIndex-1]);
 				}
 				flipbook.animating=false;
@@ -1191,9 +1235,9 @@ var flipbook={
 			lib("#flipbookDualRight .flipbookBack .shadow").css({ opacity:0 });
 			if (!endTransition) {
 				lib([currentButton.parentNode]).find(".flipbookBack").css({ visibility:"visible", transformOrigin:transformOrigin, transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg) translate("+txContainer.toFixed(10)+"em, "+tyContainer.toFixed(10)+"em)" });
-				lib([currentButton.parentNode]).find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ left:leftBack.toFixed(10)+"em", top:topBack.toFixed(10)+"em", transformOrigin:"0% 0% 0px", transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
+				lib([currentButton.parentNode]).find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ left:leftBack.toFixed(10)+"em", top:topBack.toFixed(10)+"em", transformOrigin:"0% 0% 0px", transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
 				lib([currentButton.parentNode]).find(".flipbookFront").css({ transformOrigin:transformOrigin, transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg) translate("+txContainer.toFixed(10)+"em, "+tyContainer.toFixed(10)+"em)" });
-				lib([currentButton.parentNode]).find(".flipbookFront>img").css({ left:leftFront.toFixed(10)+"em", top:(topFront-flipbook.h).toFixed(10)+"em", transformOrigin:"0% 100% 0px", transform:"rotate("+(-flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
+				lib([currentButton.parentNode]).find(".flipbookFront>.pageContent").css({ left:leftFront.toFixed(10)+"em", top:(topFront-flipbook.h).toFixed(10)+"em", transformOrigin:"0% 100% 0px", transform:"rotate("+(-flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
 			}
 		} else if (currentButton.id.substr(0, 4)==="dual" && currentButton.id.substr(4).indexOf("Right")!==-1) {
 			lib("#flipbookDualRight").css({ zIndex:2 });
@@ -1209,9 +1253,9 @@ var flipbook={
 			lib("#flipbookDualLeft .flipbookBack .shadow").css({ opacity:0 });
 			if (!endTransition) {
 				lib([currentButton.parentNode]).find(".flipbookBack").css({ visibility:"visible", transformOrigin:transformOrigin, transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg) translate("+txContainer.toFixed(10)+"em, "+tyContainer.toFixed(10)+"em)" });
-				lib([currentButton.parentNode]).find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ left:leftBack.toFixed(10)+"em", top:topBack.toFixed(10)+"em", transformOrigin:"0% 0% 0px", transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
+				lib([currentButton.parentNode]).find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ left:leftBack.toFixed(10)+"em", top:topBack.toFixed(10)+"em", transformOrigin:"0% 0% 0px", transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
 				lib([currentButton.parentNode]).find(".flipbookFront").css({ transformOrigin:transformOrigin, transform:"rotate("+(flipbook.angle*180/Math.PI).toFixed(10)+"deg) translate("+txContainer.toFixed(10)+"em, "+tyContainer.toFixed(10)+"em)" });
-				lib([currentButton.parentNode]).find(".flipbookFront>img").css({ left:leftFront.toFixed(10)+"em", top:(topFront-flipbook.h).toFixed(10)+"em", transformOrigin:"0% 100% 0px", transform:"rotate("+(-flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
+				lib([currentButton.parentNode]).find(".flipbookFront>.pageContent").css({ left:leftFront.toFixed(10)+"em", top:(topFront-flipbook.h).toFixed(10)+"em", transformOrigin:"0% 100% 0px", transform:"rotate("+(-flipbook.angle*180/Math.PI).toFixed(10)+"deg)"});
 			}
 		}
 		if (currentButton.id.substr(0, 4)==="dual") {
@@ -1317,70 +1361,70 @@ var flipbook={
 					lib("#flipbookDualRight").css({ opacity:1 });
 					lib(".flipbookFront").css({ opacity:1 });
 					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront, .flipbookBack").css({ transform:"translate(0em, 0em) rotate(0deg)", left:"0em", top:"0em" });
-					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>img").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
-					var img1=lib("#flipbookDualRight").find(".flipbookFront>img").targets[0];
+					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>.pageContent").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
+					var img1=lib("#flipbookDualRight").find(".flipbookFront>.pageContent").targets[0];
 					lib([img1]).css({ opacity:0 });
 					r=flipbook.selectPageImage(img1, imgs[index]);
 					img1=r[0];
 					lib([img1]).css({ opacity:1 });
-					var img2=lib("#flipbookDualRight").find(".flipbookBack>img").targets[0];
+					var img2=lib("#flipbookDualRight").find(".flipbookBack>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img2, imgs[index+1]);
-					var img3=lib("#flipbookDualRight").find(".flipbookBehind>img").targets[0];
+					var img3=lib("#flipbookDualRight").find(".flipbookBehind>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img3, imgs[index+2]);
-					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0 });
+					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0 });
 					lib(".flipbookBack").css({ zIndex:0 });
 				} else if (index>0 && index<imgs.length-1) {
 					lib("#flipbookDualLeft").css({ opacity:1 });
 					lib("#flipbookDualRight").css({ opacity:1 });
-					lib("#flipbookDualLeft .flipbookBack>img, #flipbookDualLeft .flipbookBack .overlay, #flipbookDualLeft .flipbookBack .shadow, #flipbookDualLeft .flipbookBack .light").css({ left:0+"em" });
-					lib("#flipbookDualRight .flipbookBack>img, #flipbookDualRight .flipbookBack .overlay, #flipbookDualRight .flipbookBack .shadow, #flipbookDualRight .flipbookBack .light").css({ left:(flipbook.sqrt-flipbook.w)+"em" });
+					lib("#flipbookDualLeft .flipbookBack>.pageContent, #flipbookDualLeft .flipbookBack .overlay, #flipbookDualLeft .flipbookBack .shadow, #flipbookDualLeft .flipbookBack .light").css({ left:0+"em" });
+					lib("#flipbookDualRight .flipbookBack>.pageContent, #flipbookDualRight .flipbookBack .overlay, #flipbookDualRight .flipbookBack .shadow, #flipbookDualRight .flipbookBack .light").css({ left:(flipbook.sqrt-flipbook.w)+"em" });
 					lib(".flipbookFront").css({ opacity:1 });
 					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront, .flipbookBack").css({ transform:"translate(0em, 0em)", left:"0em", top:"0em" });
-					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>img").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
-					var img1=lib("#flipbookDualLeft").find(".flipbookFront>img").targets[0];
+					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>.pageContent").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
+					var img1=lib("#flipbookDualLeft").find(".flipbookFront>.pageContent").targets[0];
 					lib([img1]).css({ opacity:0 });
 					r=flipbook.selectPageImage(img1, imgs[index]);
 					img1=r[0];
 					lib([img1]).css({ opacity:1 });
-					var img1b=lib("#flipbookDualLeft").find(".flipbookBack>img").targets[0];
+					var img1b=lib("#flipbookDualLeft").find(".flipbookBack>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img1b, imgs[index-1]);
 					if (index-2>=0) {
-						var img1c=lib("#flipbookDualLeft").find(".flipbookBehind>img").targets[0];
+						var img1c=lib("#flipbookDualLeft").find(".flipbookBehind>.pageContent").targets[0];
 						r=flipbook.selectPageImage(img1c, imgs[index-2]);
 					}
-					var img2=lib("#flipbookDualRight").find(".flipbookFront>img").targets[0];
+					var img2=lib("#flipbookDualRight").find(".flipbookFront>.pageContent").targets[0];
 					lib([img2]).css({ opacity:0 });
 					r=flipbook.selectPageImage(img2, imgs[index+1]);
 					img2=r[0];
 					lib([img2]).css({ opacity:1 });
 					if (index+2<imgs.length) {
-						var img2b=lib("#flipbookDualRight").find(".flipbookBack>img").targets[0];
+						var img2b=lib("#flipbookDualRight").find(".flipbookBack>.pageContent").targets[0];
 						r=flipbook.selectPageImage(img2b, imgs[index+2]);
 					}
 					if (index+3<imgs.length) {
-						var img2c=lib("#flipbookDualRight").find(".flipbookBehind>img").targets[0];
+						var img2c=lib("#flipbookDualRight").find(".flipbookBehind>.pageContent").targets[0];
 						r=flipbook.selectPageImage(img2c, imgs[index+3]);
 					}
 					lib(".flipbookBack").css({ zIndex:0 });
-					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0, left:"0em" });
+					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0, left:"0em" });
 				} else if (index===imgs.length-1) {
 					lib("#flipbookDualLeft").css({ opacity:1 });
 					lib("#flipbookDualRight").css({ opacity:0 });
 					lib(".flipbookFront").css({ opacity:1 });
 					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront, .flipbookBack").css({ transform:"translate(0em, 0em)", left:"0em", top:"0em" });
-					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>img").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
+					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>.pageContent").css({ left:"0em", top:"0em", transform:"rotate(0deg)" });
 					lib("#flipbookDualRight").css({ opacity:0 });
-					var img1=lib("#flipbookDualLeft").find(".flipbookFront>img").targets[0];
+					var img1=lib("#flipbookDualLeft").find(".flipbookFront>.pageContent").targets[0];
 					lib([img1]).css({ opacity:0 });
 					r=flipbook.selectPageImage(img1, imgs[index]);
 					img1=r[0];
 					lib([img1]).css({ opacity:1 });
-					var img2=lib("#flipbookDualLeft").find(".flipbookBack>img").targets[0];
+					var img2=lib("#flipbookDualLeft").find(".flipbookBack>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img2, imgs[index-1]);
-					var img3=lib("#flipbookDualLeft").find(".flipbookBehind>img").targets[0];
+					var img3=lib("#flipbookDualLeft").find(".flipbookBehind>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img3, imgs[index-2]);
 					lib(".flipbookBack").css({ zIndex:0 });
-					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0, left:"0em" });
+					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0, left:"0em" });
 				}
 			} else if (endTransition && flipbook.context!=="turnPossibility") {
 				if (flipbook.context!=="goToPageAuto" && flipbook.endMove!=="cancel") {
@@ -1388,68 +1432,68 @@ var flipbook={
 				}
 				flipbook.animating=false;
 				lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront, .flipbookBack").css({ transform:"translate(0em, 0em) rotate(0deg)", left:"0em", top:"0em" });
-				lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>img").css({ transform:"rotate(0deg)", left:"0em", top:"0em" });
-				lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ transform:"rotate(0deg)", top:"0em" });
+				lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookFront>.pageContent").css({ transform:"rotate(0deg)", left:"0em", top:"0em" });
+				lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ transform:"rotate(0deg)", top:"0em" });
 				var index=flipbook.endMove!=="cancel"?flipbook.futureIndex:flipbook.currentIndex;
 				if (index===0) {
 					lib("#flipbookDualRight").css({ opacity:1 });
 					lib("#flipbookDualLeft").css({ opacity:0 });
-					var img1=lib("#flipbookDualRight").find(".flipbookFront>img").targets[0];
+					var img1=lib("#flipbookDualRight").find(".flipbookFront>.pageContent").targets[0];
 					lib([img1]).css({ opacity:0 });
 					r=flipbook.selectPageImage(img1, imgs[index]);
 					img1=r[0];
 					lib([img1]).css({ opacity:1 });
-					var img2=lib("#flipbookDualRight").find(".flipbookBack>img").targets[0];
+					var img2=lib("#flipbookDualRight").find(".flipbookBack>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img2, imgs[index+1]);
-					var img3=lib("#flipbookDualRight").find(".flipbookBehind>img").targets[0];
+					var img3=lib("#flipbookDualRight").find(".flipbookBehind>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img3, imgs[index+2]);
 					lib(".flipbookBack").css({ zIndex:0 });
 				} else if (index>0 && index<imgs.length-1) {
 					lib("#flipbookDualLeft").css({ opacity:1 });
 					lib("#flipbookDualRight").css({ opacity:1 });
-					lib("#flipbookDualLeft .flipbookBack>img, #flipbookDualLeft .flipbookBack .overlay, #flipbookDualLeft .flipbookBack .shadow, #flipbookDualLeft .flipbookBack .light").css({ left:0+"em" });
-					lib("#flipbookDualRight .flipbookBack>img, #flipbookDualRight .flipbookBack .overlay, #flipbookDualRight .flipbookBack .shadow, #flipbookDualRight .flipbookBack .light").css({ left:(flipbook.sqrt-flipbook.w)+"em" });
-					var img1=lib("#flipbookDualRight").find(".flipbookFront>img").targets[0];
+					lib("#flipbookDualLeft .flipbookBack>.pageContent, #flipbookDualLeft .flipbookBack .overlay, #flipbookDualLeft .flipbookBack .shadow, #flipbookDualLeft .flipbookBack .light").css({ left:0+"em" });
+					lib("#flipbookDualRight .flipbookBack>.pageContent, #flipbookDualRight .flipbookBack .overlay, #flipbookDualRight .flipbookBack .shadow, #flipbookDualRight .flipbookBack .light").css({ left:(flipbook.sqrt-flipbook.w)+"em" });
+					var img1=lib("#flipbookDualRight").find(".flipbookFront>.pageContent").targets[0];
 					lib([img1]).css({ opacity:0 });
 					r=flipbook.selectPageImage(img1, imgs[index+1]);
 					img1=r[0];
 					lib([img1]).css({ opacity:1 });
 					if (index+2<imgs.length) {
 						flipbook.loadCountWanted++;
-						var img1b=lib("#flipbookDualRight").find(".flipbookBack>img").targets[0];
+						var img1b=lib("#flipbookDualRight").find(".flipbookBack>.pageContent").targets[0];
 						r=flipbook.selectPageImage(img1b, imgs[index+2]);
 					}
 					if (index+3<imgs.length) {
 						flipbook.loadCountWanted++;
-						var img1c=lib("#flipbookDualRight").find(".flipbookBehind>img").targets[0];
+						var img1c=lib("#flipbookDualRight").find(".flipbookBehind>.pageContent").targets[0];
 						r=flipbook.selectPageImage(img1c, imgs[index+3]);
 					}
-					var img2=lib("#flipbookDualLeft").find(".flipbookFront>img").targets[0];
+					var img2=lib("#flipbookDualLeft").find(".flipbookFront>.pageContent").targets[0];
 					lib([img2]).css({ opacity:0 });
 					r=flipbook.selectPageImage(img2, imgs[index]);
 					img2=r[0];
 					lib([img2]).css({ opacity:1 });
 					if (index-1>=0) {
-						var img2b=lib("#flipbookDualLeft").find(".flipbookBack>img").targets[0];
+						var img2b=lib("#flipbookDualLeft").find(".flipbookBack>.pageContent").targets[0];
 						r=flipbook.selectPageImage(img2b, imgs[index-1]);
 					}
 					if (index-2>=0) {
-						var img2c=lib("#flipbookDualLeft").find(".flipbookBehind>img").targets[0];
+						var img2c=lib("#flipbookDualLeft").find(".flipbookBehind>.pageContent").targets[0];
 						r=flipbook.selectPageImage(img2c, imgs[index-2]);
 					}
 					lib(".flipbookBack").css({ zIndex:0 }); 
-					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>img, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0 });
+					lib("#flipbookDualLeft, #flipbookDualRight").find(".flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ opacity:0 });
 				} else if (index===imgs.length-1) {
 					lib("#flipbookDualLeft").css({ opacity:1 });
 					lib("#flipbookDualRight").css({ opacity:0 });
-					var img1=lib("#flipbookDualLeft").find(".flipbookFront>img").targets[0];
+					var img1=lib("#flipbookDualLeft").find(".flipbookFront>.pageContent").targets[0];
 					lib([img1]).css({ opacity:0 });
 					r=flipbook.selectPageImage(img1, imgs[index]);
 					img1=r[0];
 					lib([img1]).css({ opacity:1 });
-					var img2=lib("#flipbookDualLeft").find(".flipbookBack>img").targets[0];
+					var img2=lib("#flipbookDualLeft").find(".flipbookBack>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img2, imgs[index-1]);
-					var img3=lib("#flipbookDualLeft").find(".flipbookBehind>img").targets[0];
+					var img3=lib("#flipbookDualLeft").find(".flipbookBehind>.pageContent").targets[0];
 					r=flipbook.selectPageImage(img3, imgs[index-2]);
 					lib(".flipbookBack").css({ zIndex:0 });
 				}
@@ -1458,8 +1502,8 @@ var flipbook={
 		if (endTransition && flipbook.endMove==="cancel") {
 			flipbook.endMove="";
 		}
-		if (endTransition && flipbook.context==="goToPageAuto" && flipbook.mode==="dual") {
-			flipbook.centerDualOnOccupiedWidth(flipbook.currentIndex);
+		if (endTransition && flipbook.context!=="turnPossibility" && flipbook.mode==="dual") {
+			flipbook.showDualSpread(flipbook.currentIndex);
 		}
 		if (endTransition && flipbook.context==="goToPageAuto" && flipbook.autoStepTarget!==null && !flipbook.animating) {
 			var autoStepTarget=flipbook.autoStepTarget;
@@ -1477,8 +1521,8 @@ var flipbook={
 			flipbook.animating=false;
 			if (flipbook.distMax===0 && currentButton && currentButton.parentNode) {
 				lib([currentButton.parentNode]).find(".flipbookFront, .flipbookBack").css({ transform:"translate(0em, 0em) rotate(0deg)", left:"0em", top:"0em" });
-				lib([currentButton.parentNode]).find(".flipbookFront>img").css({ transform:"rotate(0deg)", left:"0em", top:"0em" });
-				lib([currentButton.parentNode]).find(".flipbookBack>img, .flipbookBack>.imgCont, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ transform:"rotate(0deg)", left:"0em", top:"0em" });
+				lib([currentButton.parentNode]).find(".flipbookFront>.pageContent").css({ transform:"rotate(0deg)", left:"0em", top:"0em" });
+				lib([currentButton.parentNode]).find(".flipbookBack>.pageContent, .flipbookBack>.pageContent, .flipbookBack>.overlay, .flipbookBack>.shadow, .flipbookBack>.light").css({ transform:"rotate(0deg)", left:"0em", top:"0em" });
 				lib([currentButton.parentNode]).find(".flipbookBack").css({ visibility:"hidden", zIndex:0 });
 			}
 			flipbook.memDistCurrent=flipbook.distCurrent;

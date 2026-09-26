@@ -118,6 +118,18 @@ button {
 	width:auto;
 	height:100%;
 }
+#pages_list .thumbFallback {
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	width:100%;
+	height:100%;
+	background:#fff;
+	color:#111;
+	font-size:1.2em;
+	letter-spacing:normal;
+	line-height:1.2;
+}
 .flipbook_content {
 	width:auto;
 	min-width:100%;
@@ -199,13 +211,43 @@ button {
 	left:0;
 	overflow:hidden;
 }
-.flipbookMask>img {
+.flipbookMask>.pageContent {
 	position:absolute;
 	display:block;
 	width:100%;
 	height:100%;
+	top:0;
+	left:0;
 }
-.flipbookFront>img, .imgCont, .light, .overlay, .shadow, .turnCanvas {
+.pageContent>.imageContent,
+.pageContent>.htmlContent,
+.pageContent>.imageContent>img,
+.pageContent>.htmlContent>iframe {
+	position:absolute;
+	display:block;
+	width:100%;
+	height:100%;
+	top:0;
+	left:0;
+	box-sizing:border-box;
+}
+.pageContent>.imageContent[hidden],
+.pageContent>.htmlContent[hidden] {
+	display:none;
+}
+.pageContent>.imageContent,
+.pageContent>.imageContent>img {
+	pointer-events:none;
+}
+.pageContent>.htmlContent,
+.pageContent>.htmlContent>iframe {
+	pointer-events:auto;
+}
+.pageContent>.htmlContent>iframe {
+	border:0;
+	background:#fff;
+}
+.flipbookFront>.pageContent, .flipbookBack>.pageContent, .light, .overlay, .shadow, .turnCanvas {
 	position:absolute;
 	top:0;
 	left:0;
@@ -213,15 +255,11 @@ button {
 .flipbookBack {
 	visibility:hidden;
 }
-#flipbookMono .flipbookBack .imgCont {
+#flipbookMono .flipbookBack>.pageContent {
 	z-index:1;
 }
-.imgCont>img {
-	position:absolute;
-	top:0;
-	left:0;
-	width:100%;
-	height:100%;
+#flipbookMono .flipbookBack>.imgCont .imageContent,
+#flipbookMono .flipbookBack>.imgCont .htmlContent {
 	transform:scaleX(-1);
 }
 .flipbookBack .overlay {
@@ -435,4 +473,10 @@ button {
 	.only_on_desktop {
 		display:none;
 	}
+}
+/* Visual turning layers must never block links, controls, or scrolling inside HTML pages. */
+.flipbookMask>.overlay,
+.flipbookMask>.shadow,
+.flipbookMask>.light {
+	pointer-events:none;
 }

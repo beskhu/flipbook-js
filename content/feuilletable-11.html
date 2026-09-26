@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lorem ipsum — Épilogue</title>
+    <style>
+        :root { color-scheme: light; font-family: Georgia, "Times New Roman", serif; }
+        * { box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; margin: 0; }
+        body { background: #e8efe9; color: #20352b; overflow: auto; }
+        main {
+            min-height: 100%;
+            padding: clamp(2rem, 7vw, 5.5rem);
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: clamp(2rem, 6vh, 5rem);
+            background:
+                radial-gradient(circle at 100% 0, rgba(78, 125, 98, 0.22), transparent 38%),
+                #e8efe9;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #6c8e79;
+            font: 700 0.75rem/1 Arial, sans-serif;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+        article { align-self: center; max-width: 40rem; }
+        h1 {
+            max-width: 9ch;
+            margin: 0 0 2rem;
+            font-size: clamp(2.5rem, 8vw, 5.5rem);
+            line-height: 0.95;
+        }
+        .lead {
+            padding-left: 1.4rem;
+            border-left: 0.35rem solid #c9744f;
+            font-size: clamp(1.15rem, 2.4vw, 1.65rem);
+            line-height: 1.5;
+        }
+        p { font-size: clamp(0.95rem, 1.7vw, 1.2rem); line-height: 1.7; }
+        footer { color: #4e6c5b; font: 0.8rem/1.4 Arial, sans-serif; text-align: right; }
+    </style>
+</head>
+<body>
+    <main>
+        <header><span>Épilogue</span><span>12</span></header>
+        <article>
+            <h1>Un dernier regard</h1>
+            <p class="lead">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla vitae elit libero, a pharetra augue.</p>
+            <p>Donec ullamcorper nulla non metus auctor fringilla. Sed posuere consectetur est at lobortis. Integer posuere erat a ante venenatis dapibus posuere velit aliquet.</p>
+            <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras justo odio, dapibus ac facilisis in, egestas eget quam.</p>
+        </article>
+        <footer>Quatrième page HTML · double-page complète</footer>
+    </main>
+</body>
+</html>
