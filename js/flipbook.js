@@ -77,12 +77,28 @@ var flipbook={
 	tweaks:function(onresize) {
 		flipbook.setFontSize();
 		lib("#pages_list>.flipbook_content>.flipbook_sub>a").css({ width:8*docWidth/docHeight+"em" });
+		flipbook.resizeHtmlThumbs();
 	 	if (typeof(onresize)==="undefined") { flipbook.scrollTop(); }
 	 	flipbook.calcPositions();
 	 	flipbook.scrollDirectlyTo(0,0);
         lib().preventMultipleThrowsDuringPeriod(function() {
             flipbook.setScrollBars();
         }, 250);
+	},
+	resizeHtmlThumbs:function() {
+		var thumbs=lib("#pages_list .htmlThumb").targets;
+		var previewWidth=800;
+		var previewHeight=previewWidth*docHeight/docWidth;
+		for (var i=0; i<thumbs.length; i++) {
+			var iframe=thumbs[i].querySelector("iframe");
+			if (!iframe || thumbs[i].clientWidth<=0) continue;
+			var scale=thumbs[i].clientWidth/previewWidth;
+			lib([iframe]).css({
+				width:previewWidth+"px",
+				height:previewHeight+"px",
+				transform:"scale("+scale+")"
+			});
+		}
 	},
 	setFontSize:function() {
 		var ltwh=lib("#wrapper").ltwhRelativeTo(document.body)[0];

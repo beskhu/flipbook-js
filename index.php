@@ -260,6 +260,9 @@
 						<a class="thumb" data-index="'.$i.'" href="./'.($i+1).'">';
 							if (isset($thumbs[$i])) {
 								echo '<img src="'.htmlspecialchars($thumbs[$i], ENT_QUOTES, 'UTF-8').'" alt="aller à la page '.($i+1).'" />';
+							} else if (($pageTypes[$i] ?? 'image')==='html') {
+								$safePageUrl=htmlspecialchars($imgs[$i], ENT_QUOTES, 'UTF-8');
+								echo '<span class="thumbFallback htmlThumb"><iframe src="'.$safePageUrl.'" title="Aperçu de la page '.($i+1).'" tabindex="-1" aria-hidden="true"></iframe><span class="thumbLabel">Page '.($i+1).'</span></span>';
 							} else {
 								echo '<span class="thumbFallback">Page '.($i+1).'</span>';
 							}
