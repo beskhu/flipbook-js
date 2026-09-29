@@ -14,14 +14,18 @@ php 7 or newer
 
 ### Installing
 
-```cd your_destination_folder/
-git clone https://github.com/beskhu/flipbook-js```
+```
+cd your_destination_folder/
+git clone https://github.com/beskhu/flipbook-js
+```
 
 replace the contents of "content" folder by your own sources for the flipbook
 
 if under apache modify eventually the .htaccess to match the folder you had chosen, relative to the hosting root folder
 if under nginx add this rewrite rule to the host file : 
-```rewrite ^/([^/\.]+)$ /?page=$1 last;```
+```
+rewrite ^/([^/\.]+)$ /?page=$1 last;
+```
 
 ### Executing program
 
