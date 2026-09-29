@@ -139,8 +139,7 @@ button {
 	letter-spacing:normal;
 	line-height:1.2;
 }
-#pages_list>.flipbook_content>.flipbook_sub>a:hover>.thumbVisual,
-#pages_list>.flipbook_content>.flipbook_sub>a:focus>.thumbVisual {
+#pages_list>.flipbook_content>.flipbook_sub>a:hover>.thumbVisual {
 	transform:scale(1.25);
 }
 #pages_list .htmlThumb>iframe {
