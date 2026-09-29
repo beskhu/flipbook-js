@@ -1,10 +1,6 @@
-# Project Title
+# Flipbook-js
 
-Flipbook-js
-
-## Description
-
-This mono and dual mode responsive flipbook build upon enumeration of sources in "content" folder emulates the act of turning pages in css transforms
+## This mono and dual mode responsive flipbook build upon enumeration of sources in "content" folder emulates the act of turning pages in css transforms
 
 ## Getting Started
 
