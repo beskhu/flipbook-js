@@ -15,7 +15,8 @@ cd your_destination_folder/
 git clone https://github.com/beskhu/flipbook-js
 ```
 
-replace the contents of "content" folder by your own sources for the flipbook
+replace the contents of "content" folder by your own sources for the flipbook and eventually (not required) if images sources, the contents of "thumbs" folder  by your own sources for thumbs.
+if you don't need thumbs to speed up the loading, empty the thumbs folder.
 
 if under apache modify eventually the .htaccess to match the folder you had chosen, relative to the hosting root folder
 if under nginx add this rewrite rule to the host file : 

@@ -216,12 +216,16 @@
 					}
 				}
 
-				$thumbs=[];
-				foreach(glob(__DIR__.'/thumbs/*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE) as $v) {
-					$thumbs[]=preg_replace('/^(.*)\/thumbs\//', "./thumbs/", $v);
+				$thumbnailSources=$imgs;
+				$thumbFiles=glob(__DIR__.'/thumbs/*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE);
+				natcasesort($thumbFiles);
+				$thumbFiles=array_values($thumbFiles);
+
+				foreach ($thumbFiles as $i=>$thumbFile) {
+					if (isset($thumbnailSources[$i])) {
+						$thumbnailSources[$i]='./thumbs/'.rawurlencode(basename($thumbFile));
+					}
 				}
-				natcasesort($thumbs);
-				$thumbs=array_values($thumbs);
 
 				function flipbookPageContent($url, $type, $extraClass='') {
 					$safeUrl=htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
@@ -236,7 +240,6 @@
 			<script>
 				var imgs='.json_encode($imgs, JSON_UNESCAPED_SLASHES).';
 				var pageTypes='.json_encode($pageTypes, JSON_UNESCAPED_SLASHES).';
-				var thumbs='.json_encode($thumbs, JSON_UNESCAPED_SLASHES).';
 				var docWidth='.$imageSize[0].';
 				var docHeight='.$imageSize[1].';
 			</script>
@@ -258,13 +261,12 @@
 						for ($i=0; $i<count($imgs); $i++) {
 							echo '
 						<a class="thumb" data-index="'.$i.'" href="./'.($i+1).'">';
-							if (isset($thumbs[$i])) {
-								echo '<span class="imageThumb thumbVisual"><img src="'.htmlspecialchars($thumbs[$i], ENT_QUOTES, 'UTF-8').'" alt="aller à la page '.($i+1).'" /><span class="thumbLabel">Page '.($i+1).'</span></span>';
-							} else if (($pageTypes[$i] ?? 'image')==='html') {
-								$safePageUrl=htmlspecialchars($imgs[$i], ENT_QUOTES, 'UTF-8');
-								echo '<span class="thumbFallback htmlThumb thumbVisual"><iframe src="'.$safePageUrl.'" title="Aperçu de la page '.($i+1).'" tabindex="-1" aria-hidden="true"></iframe><span class="thumbLabel">Page '.($i+1).'</span></span>';
+							$safePageUrl=htmlspecialchars($thumbnailSources[$i], ENT_QUOTES, 'UTF-8');
+							$hasDedicatedThumbnail=isset($thumbFiles[$i]);
+							if ($hasDedicatedThumbnail || ($pageTypes[$i] ?? 'image')==='image') {
+								echo '<span class="imageThumb thumbVisual"><img src="'.$safePageUrl.'" alt="aller à la page '.($i+1).'" /><span class="thumbLabel">Page '.($i+1).'</span></span>';
 							} else {
-								echo '<span class="thumbFallback">Page '.($i+1).'</span>';
+								echo '<span class="thumbFallback htmlThumb thumbVisual"><iframe src="'.$safePageUrl.'" title="Aperçu de la page '.($i+1).'" tabindex="-1" aria-hidden="true"></iframe><span class="thumbLabel">Page '.($i+1).'</span></span>';
 							}
 							echo '</a>';
 						}
